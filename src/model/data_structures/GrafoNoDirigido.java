@@ -228,8 +228,13 @@ public class GrafoNoDirigido<K, V> {
 	
 	public void dfs(K s)
 	{
-		
-		//falta implementar
+		Interseccion<K,V> buscado=getInfoVertex(s);
+		buscado.marcar();
+		Iterator<K> adjacentes= adj(s);
+		while(adjacentes.hasNext()){
+			K actual = adjacentes.next();
+			dfs(actual);
+		}
 		
 	}
 	
