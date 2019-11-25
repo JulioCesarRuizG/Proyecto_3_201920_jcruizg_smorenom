@@ -230,12 +230,14 @@ public class GrafoNoDirigido<K, V> {
 	{
 		Interseccion<K,V> buscado=getInfoVertex(s);
 		buscado.marcar();
-		Iterator<K> adjacentes= adj(s);
-		while(adjacentes.hasNext()){
-			K actual = adjacentes.next();
-			dfs(actual);
+		if(buscado != null)
+		{
+			Iterator<K> adjacentes= adj(s);
+			while(adjacentes.hasNext()){
+				K actual = adjacentes.next();
+				dfs(actual);
+			}
 		}
-		
 	}
 	
 	public int cc()
@@ -246,21 +248,10 @@ public class GrafoNoDirigido<K, V> {
 		{
 			if(inter != null)
 			{
-				for(Arco arco : inter.darArcos())
-				{
-					if(arco != null)
-					{
-						K buscar =  (K) arco.darDestino();
-						Interseccion interseccion = getInfoVertex(buscar);
-						if(!interseccion.estaMarcado())
-						{
-							cantidad++;
-							interseccion.marcar();
-							interseccion.conectadoA(inter);
-						}
-					}
+				if(!inter.estaMarcado()){
+					dfs(inter.darId());
+					cantidad++;
 				}
-				inter.marcar();
 			}
 			
 		}
@@ -269,7 +260,18 @@ public class GrafoNoDirigido<K, V> {
 	
 	public Iterable<K> getCC(K idVertex)
 	{
-		//falta implementar
+		uncheck();
+		dfs(idVertex);
+		Queue<K> componente= new Queue<K>(null);
+		for(Interseccion<K,V> inter : vertices)
+		{
+			
+			if(inter.estaMarcado())
+				componente.enQueue(inter.darId());
+				
+			
+		}
+		return componente;
 	}
 	
 	public Interseccion[] darVertices()

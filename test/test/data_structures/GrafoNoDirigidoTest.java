@@ -221,33 +221,37 @@ public class GrafoNoDirigidoTest {
 			fail("Error al usar el método Adj");
 		}
 	}
-	
+	@Test 
+	public void TestDfs(){
+		
+		setUp1();
+		grafo.dfs(llave1);
+		grafo.dfs(llave3);
+		assertEquals("No es el valor esperado", true,grafo.getInfoVertex(llave1).estaMarcado());
+		   
+			assertEquals("No es el valor esperado", false,grafo.getInfoVertex(llave2).estaMarcado());
+			assertEquals("No es el valor esperado", true,grafo.getInfoVertex(llave3).estaMarcado());
+			assertEquals("No es el valor esperado", false,grafo.getInfoVertex(llave4).estaMarcado());
+	}
 	@Test
 	public void Testcc()
 	{
 		setUp1();
-		grafo.setArc(llave1, llave2);
-		grafo.setArc(llave3, llave4);
-		int val1 = grafo.cc();
-		Interseccion inter1 = grafo.getInfoVertex(llave2).darConexion();
-		Interseccion inter2 = grafo.getInfoVertex(llave1);
-		Interseccion inter3 = grafo.getInfoVertex(llave4).darConexion();
-		Interseccion inter4 = grafo.getInfoVertex(llave3);
-		try
-		{
-			assertEquals("No es el valor esperado", 2, val1);
-			assertEquals("No es el valor esperado", inter2, inter1);
-			assertEquals("No es el valor esperado", inter4, inter3);
-		}
-		catch (Exception e) {
-			fail("Error al usar el método cc");
-		}
+		int x =grafo.cc();
+		assertEquals("No es el valor esperado", 5, x);
+		assertEquals("No es el valor esperado", true,grafo.getInfoVertex(llave1).estaMarcado());
+		assertEquals("No es el valor esperado", true,grafo.getInfoVertex(llave2).estaMarcado());
+		assertEquals("No es el valor esperado", true,grafo.getInfoVertex(llave3).estaMarcado());
+		assertEquals("No es el valor esperado", true,grafo.getInfoVertex(llave4).estaMarcado());
+		assertEquals("No es el valor esperado", true,grafo.getInfoVertex(llave5).estaMarcado());
 	}
-	
 	@Test
-	public void Testdfs()
+	public void TestGetCC()
 	{
-		//Falta implementar
+		setUp1();
+		Iterable<Integer> componente= grafo.getCC(llave1);
+		int x = componente.iterator().next();
+		assertEquals("No es el valor esperado", llave1,x );
 	}
 	
 	@Test
@@ -274,12 +278,6 @@ public class GrafoNoDirigidoTest {
 		catch (Exception e) {
 			fail("Se ha generado un error en el método Dar Vertices");
 		}
-	}
-	
-	@Test
-	public void TestGetCC()
-	{
-		//Falta implementar
 	}
 	
 	@Test
