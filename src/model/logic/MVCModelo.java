@@ -293,6 +293,59 @@ public class MVCModelo<K, V> {
 
 	}
 	
+	public void persistirJson3Costos()
+	{
+		Gson gson = new Gson();
+		String dato = gson.toJson(grafoCon3Costos);
+		String ruta = "./data/dataJson3Costos.json";
+		PrintWriter writer = null;
+		try
+		{
+			writer = new PrintWriter(ruta);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		writer.println(dato);
+	}
+	
+	public void cargarJson3Costos()
+	{
+		String path = "./data/dataJson3Costos.json";
+		JsonReader reader;
+		Gson gson = new Gson();
+		try {
+			reader = new JsonReader(new FileReader(path));
+			GrafoNoDirigido lista3 = gson.fromJson(reader, GrafoNoDirigido.class);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public K darIdMasCercano(double lng, double lat)
+	{
+		K id = null;
+		double distancia = Double.POSITIVE_INFINITY;
+		for(Interseccion<K, V> inter : grafo.darVertices())
+		{
+			if(inter != null)
+			{
+				Informacion info1 = (Informacion) inter.darInfo();
+				double sin1 = Math.pow(Math.sin((lat-info1.darLatitud())/2), 2);
+				double cos1 = Math.cos(info1.darLatitud());
+				double cos2 = Math.cos(lat);
+				double sin2 = Math.pow((Math.sin((lng-info1.darLongitud())/2)), 2);
+				double interno = Math.asin(Math.sqrt(sin1+(cos1*cos2*sin2)));
+				double cost = 2*6371*interno;
+				if(cost < distancia)
+				{
+					distancia = cost;
+					id = inter.darId();
+				}
+			}
+		}
+		return id;
+	}
+	
 	public static void main(String[] args) throws IOException {
 		MVCModelo modelo = new MVCModelo();
 	}
