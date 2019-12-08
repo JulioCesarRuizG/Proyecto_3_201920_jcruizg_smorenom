@@ -16,20 +16,43 @@ import model.data_structures.GrafoNoDirigido;
 import model.data_structures.Informacion;
 import model.data_structures.Interseccion;
 import model.data_structures.InterseccionConCostos;
+import model.data_structures.MaxHeapCP;
+import model.data_structures.Queue;
 import model.data_structures.Viaje;
 
 /**
  * Definicion del modelo del mundo
  *
  */
-public class MVCModelo<K, V> {
+public class MVCModelo {
 
 	private GrafoNoDirigido<Integer,Informacion> grafo;
 	private GrafoNoDirigido<Integer,Informacion> grafoEnRango;
 	private GrafoNoDirigido<Integer,Informacion> grafoRelax;
 	private Grafo3Costos<Integer, Informacion> grafoCon3Costos;
 
-
+    private class idYCosto implements Comparable<idYCosto>{
+    	private Interseccion id;
+    	private double costo;
+    	public idYCosto(Interseccion pID, double pCosto) {
+    		id=pID;
+    		costo=pCosto;
+    	}
+		@Override
+		public int compareTo(idYCosto o) {
+			if(costo>o.costo)
+			return 1;
+			else if(costo<o.costo)
+		    return -1;
+			else
+				
+			return 0;
+		}
+		
+	
+		
+    	
+    }
 	public MVCModelo() throws IOException {
 
 		String path = "./data/dataJson.json";
@@ -46,7 +69,7 @@ public class MVCModelo<K, V> {
 		System.out.println("El total de vértices cargados fue: " + grafo.V());
 		System.out.println("El total de arcos cargados fue: " + grafo.E());
 		int cantidad = 0;
-		for(Interseccion<K, V> inter : grafo.darVertices())
+		for(Interseccion<Integer,Informacion> inter : grafo.darVertices())
 		{
 			if(inter != null)
 			{
@@ -59,14 +82,14 @@ public class MVCModelo<K, V> {
 		}
 		System.out.println("La cantidad de componentes conexos son: " + cantidad);
 
-		for(Interseccion<K, V> inter : grafo.darVertices())
+		for(Interseccion<Integer, Informacion> inter : grafo.darVertices())
 		{
 			if(inter != null)
 			{
 				int inicio = (int) inter.darId();
 				Informacion info = (Informacion) inter.darInfo();
 				grafoCon3Costos.addVertex(inicio, info);
-				for(Arco<K> arcos : inter.darArcos())
+				for(Arco<Integer> arcos : inter.darArcos())
 				{
 					if(arcos != null)
 					{
@@ -107,19 +130,19 @@ public class MVCModelo<K, V> {
 					{
 						grafoCon3Costos.setCostArcCSV(inicioID, destinoID, tiempoPromedioEnSegundos);
 					}
-					
+
 					double haversine = grafoCon3Costos.getCostArcHaversine(inicioID, destinoID);
 					double cost = haversine/tiempoPromedioEnSegundos;
 					grafoCon3Costos.setCostArcVelXTim(inicioID, destinoID, cost);
 				}
 			}
 
-			for(InterseccionConCostos<K, V> inter : grafoCon3Costos.darVertices())
+			for(InterseccionConCostos<Integer,Informacion> inter : grafoCon3Costos.darVertices())
 			{
 				if(inter != null)
 				{
 					int inicio = (int) inter.darId();
-					for(Arco3Costos<K> arcos : inter.darArcos())
+					for(Arco3Costos<Integer> arcos : inter.darArcos())
 					{
 						if(arcos != null)
 						{
@@ -143,7 +166,7 @@ public class MVCModelo<K, V> {
 				}
 
 			}
-			
+
 			for(Interseccion inter : grafo.darVertices())
 			{
 				if(inter != null)
@@ -292,7 +315,7 @@ public class MVCModelo<K, V> {
 		writer.close();
 
 	}
-	
+
 	public void persistirJson3Costos()
 	{
 		Gson gson = new Gson();
@@ -307,7 +330,7 @@ public class MVCModelo<K, V> {
 		}
 		writer.println(dato);
 	}
-	
+
 	public void cargarJson3Costos()
 	{
 		String path = "./data/dataJson3Costos.json";
@@ -320,12 +343,12 @@ public class MVCModelo<K, V> {
 			e.printStackTrace();
 		}
 	}
-	
-	public K darIdMasCercano(double lng, double lat)
+
+	public Integer darIdMasCercano(double lng, double lat)
 	{
-		K id = null;
+		Integer id = null;
 		double distancia = Double.POSITIVE_INFINITY;
-		for(Interseccion<K, V> inter : grafo.darVertices())
+		for(Interseccion<Integer,Informacion> inter : grafo.darVertices())
 		{
 			if(inter != null)
 			{
@@ -345,7 +368,64 @@ public class MVCModelo<K, V> {
 		}
 		return id;
 	}
+
+	/*
+	 * Parte A
+	 */
+
+	//A2
+
+	public Queue<String> NVerticesMenorVelocidad(int n) throws Exception
+	{
+		Queue<String> cola = new Queue<String>(null);
+		int tamanio = n;
+		MaxHeapCP<idYCosto> menores = new MaxHeapCP<>();
 	
+		for(Interseccion<Integer,Informacion> inter : grafo.darVertices())
+		{
+			double promedioactual;
+			int cantidad = 0;
+			int suma = 0;
+			if(inter != null)
+			{
+				for(Arco<Integer> arcos : inter.darArcos()) 
+				{
+					if(arcos != null)
+					{
+						cantidad++;
+						suma += arcos.darCosto();
+					}
+				}
+				promedioactual = suma/cantidad;
+				idYCosto obj1 = new idYCosto(inter, promedioactual);
+				boolean caso = false;
+				if(menores.darNumElementos() < tamanio)
+				{
+					menores.agregar(obj1);
+				}
+				else
+				{
+					idYCosto mayor = menores.darMax();
+					if(mayor.compareTo(obj1) == 1 )
+					{
+						menores.sacarMax();
+						menores.agregar(obj1);
+					}
+				}
+				
+			}
+		}
+		
+		cola.enQueue("Estos son los " + tamanio + " vértices con menor tiempo de viaje");
+		for(int i=0 ; i<menores.darNumElementos() ; i++)
+		{
+			idYCosto todos = menores.darMax();
+			Informacion info = (Informacion) todos.id.darInfo();
+			cola.enQueue("ID: " + todos.id.darId() + " Latitud: " + info.darLatitud() + " Longitud: " + info.darLongitud());
+		}
+		return cola;
+	}
+
 	public static void main(String[] args) throws IOException {
 		MVCModelo modelo = new MVCModelo();
 	}

@@ -343,6 +343,21 @@ public class Grafo3Costos<K, V> {
 			}
 		}
 	}
+	public int  dfsConSize(K s)
+	{
+		InterseccionConCostos<K, V> buscado=getInfoVertex(s);
+		
+		int x=1;
+		if(buscado != null)
+		{buscado.marcar();
+			Iterator<K> adjacentes= adj(s);
+			while(adjacentes.hasNext()){
+				K actual = adjacentes.next();
+				x+=dfsConSize(actual);
+			}
+		}
+		return x;
+	}
 	
 	public int cc()
 	{
