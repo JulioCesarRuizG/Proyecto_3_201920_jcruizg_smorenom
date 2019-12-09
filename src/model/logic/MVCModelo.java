@@ -13,12 +13,14 @@ import model.data_structures.Arco;
 import model.data_structures.Arco3Costos;
 import model.data_structures.Grafo3Costos;
 import model.data_structures.GrafoNoDirigido;
+import model.data_structures.IndexCP;
 import model.data_structures.Informacion;
 import model.data_structures.Interseccion;
 import model.data_structures.InterseccionConCostos;
 import model.data_structures.MaxHeapCP;
 import model.data_structures.Queue;
 import model.data_structures.Viaje;
+import model.data_structures.idYCostoMin;
 
 /**
  * Definicion del modelo del mundo
@@ -48,11 +50,29 @@ public class MVCModelo {
 				
 			return 0;
 		}
+    }
+		 private class idYCostoMin implements Comparable<idYCostoMin>{
+		    	private Integer id;
+		    	private double costo;
+		    	public idYCostoMin(Integer pID, double pCosto) {
+		    		id=pID;
+		    		costo=pCosto;
+		    	}
+				@Override
+				public int compareTo(idYCostoMin o) {
+					if(costo>o.costo)
+					return -1;
+					else if(costo<o.costo)
+				    return 1;
+					else
+						
+					return 0;
+				}
 		
-	
+		 }
 		
     	
-    }
+    
 	public MVCModelo() throws IOException {
 
 		String path = "./data/dataJson.json";
@@ -425,7 +445,177 @@ public class MVCModelo {
 		}
 		return cola;
 	}
+	public Queue<String> Djikstra4(double latOrigen,double longOrigen,double latDestino,double longDestino) throws Exception{
+		Double[] distTo= new Double[grafoCon3Costos.V()];         
+	  Arco3Costos<Integer>[] edgeTo= new Arco3Costos[grafoCon3Costos.V()];    
+	  
+	  Integer verticeOrigen=darIdMasCercano(longOrigen,latOrigen);
+	  Integer verticeDestino=darIdMasCercano(longDestino,latDestino);
+		
+	   for (int v = 0; v < grafoCon3Costos.V(); v++)
+           distTo[v] = Double.POSITIVE_INFINITY;
+	   
+       distTo[verticeOrigen] = 0.0;
+       IndexCP<idYCostoMin,Integer> pq= new IndexCP<idYCostoMin, Integer>();
+       idYCostoMin origen = new idYCostoMin(verticeOrigen,distTo[verticeOrigen]);
+       pq.agregar(origen,origen.id);
+       while (!pq.esVacia()) {
+           int v = pq.sacarMax().id;
+           for (Arco3Costos<Integer> e :  grafoCon3Costos.adj(v)){
+        		 int w = e.darDestino();
+     	        if (distTo[w] > distTo[v] + e.darCostoCSV()) {
+     	            distTo[w] = distTo[v] + e.darCostoCSV();
+     	            edgeTo[w] = e;
+    
+     	            if (pq.contains(w)) pq.cambiarPrioridad(w, new idYCostoMin(w,distTo[w]));
+     	            else                pq.agregar(new idYCostoMin(w,distTo[w]),w);
+     	        }
+           }
+              
+       }
+       Queue<Integer> idsDeLosVertices= new Queue<Integer>(null);
+       boolean fin= false;
+       Integer idActual = verticeDestino;
+       idsDeLosVertices.enQueue(idActual);
+       double tiempoPromedio = 0;
+       double distanciaHaversine=0;
+       while(!fin){
+    	   tiempoPromedio+=edgeTo[idActual].darCostoCSV();
+    	   distanciaHaversine+=edgeTo[idActual].darCostoHaversine();
+    	   idActual= edgeTo[idActual].darOrigen();
+    	   idsDeLosVertices.enQueue(idActual);
+    	   if(idActual.equals(verticeOrigen)){
+    		   fin=true;
+    	   }
+    	   
+       }
+       int cantidadVertices= idsDeLosVertices.size();
+       
+       Queue<String> respuesta = new Queue<String>(null);
+       respuesta.enQueue("Numero de vertices utilizados:"+cantidadVertices);
+       while(idsDeLosVertices.size()!=0){
+    	   int actual= idsDeLosVertices.deQueue();
+    	   Informacion datosDelVertice= grafoCon3Costos.getInfoVertex2(actual);
+    	   respuesta.enQueue("Vertice:"+actual+", Latitud:"+ datosDelVertice.darLatitud()+", Longitud:"+ datosDelVertice.darLongitud());
+    	   
+    	   
+       }
+       respuesta.enQueue("El costo mínimo es:" +tiempoPromedio);
+       respuesta.enQueue("La distancia estimada es:"+ distanciaHaversine);
+       return respuesta;
+	}
+	public Queue<String> Djikstra7(double latOrigen,double longOrigen,double latDestino,double longDestino) throws Exception{
+		Double[] distTo= new Double[grafoCon3Costos.V()];         
+	  Arco3Costos<Integer>[] edgeTo= new Arco3Costos[grafoCon3Costos.V()];    
+	  
+	  Integer verticeOrigen=darIdMasCercano(longOrigen,latOrigen);
+	  Integer verticeDestino=darIdMasCercano(longDestino,latDestino);
+		
+	   for (int v = 0; v < grafoCon3Costos.V(); v++)
+           distTo[v] = Double.POSITIVE_INFINITY;
+	   
+       distTo[verticeOrigen] = 0.0;
+       IndexCP<idYCostoMin,Integer> pq= new IndexCP<idYCostoMin, Integer>();
+       idYCostoMin origen = new idYCostoMin(verticeOrigen,distTo[verticeOrigen]);
+       pq.agregar(origen,origen.id);
+       while (!pq.esVacia()) {
+           int v = pq.sacarMax().id;
+           for (Arco3Costos<Integer> e :  grafoCon3Costos.adj(v)){
+        		 int w = e.darDestino();
+     	        if (distTo[w] > distTo[v] + e.darCostoHaversine()) {
+     	            distTo[w] = distTo[v] + e.darCostoHaversine();
+     	            edgeTo[w] = e;
+    
+     	            if (pq.contains(w)) pq.cambiarPrioridad(w, new idYCostoMin(w,distTo[w]));
+     	            else                pq.agregar(new idYCostoMin(w,distTo[w]),w);
+     	        }
+           }
+              
+       }
+       Queue<Integer> idsDeLosVertices= new Queue<Integer>(null);
+       boolean fin= false;
+       Integer idActual = verticeDestino;
+       idsDeLosVertices.enQueue(idActual);
+       double tiempoPromedio = 0;
+       double distanciaHaversine=0;
+       while(!fin){
+    	   tiempoPromedio+=edgeTo[idActual].darCostoCSV();
+    	   distanciaHaversine+=edgeTo[idActual].darCostoHaversine();
+    	   idActual= edgeTo[idActual].darOrigen();
+    	   idsDeLosVertices.enQueue(idActual);
+    	   if(idActual.equals(verticeOrigen)){
+    		   fin=true;
+    	   }
+    	   
+       }
+       int cantidadVertices= idsDeLosVertices.size();
+       
+       Queue<String> respuesta = new Queue<String>(null);
+       respuesta.enQueue("Numero de vertices utilizados:"+cantidadVertices);
+       while(idsDeLosVertices.size()!=0){
+    	   int actual= idsDeLosVertices.deQueue();
+    	   Informacion datosDelVertice= grafoCon3Costos.getInfoVertex2(actual);
+    	   respuesta.enQueue("Vertice:"+actual+", Latitud:"+ datosDelVertice.darLatitud()+", Longitud:"+ datosDelVertice.darLongitud());
+    	   
+    	   
+       }
+       respuesta.enQueue("El costo mínimo es:" +tiempoPromedio);
+       respuesta.enQueue("La distancia estimada es:"+ distanciaHaversine);
+       return respuesta;
+	}
+	public Queue<String> Prim(){
+		InterseccionConCostos<Integer, Informacion> inicial= darVerticeDelMaxSubgrafo();
+		Iterable<Integer> idsVertices= grafoCon3Costos.getCC(inicial.darId());
+		Grafo3Costos<Integer,Informacion>  subGrafo= grafoCon3Costos.crearSubgrafo(inicial.darId());
+		
+		Double[] distTo= new Double[subGrafo.V()];         
+        Arco3Costos<Integer>[] edgeTo= new Arco3Costos[subGrafo.V()];    
+		boolean[]  marked = new boolean[subGrafo.V()];
+        IndexCP<idYCostoMin,Integer> pq= new IndexCP<idYCostoMin, Integer>();
+        for (int v = 0; v < subGrafo.V(); v++)
+            distTo[v] = Double.POSITIVE_INFINITY;
 
+        for (int v = 0; v < subGrafo.V(); v++)     
+            if (!marked[v])
+            {
+            	 distTo[v] = 0.0;
+                 pq.agregar( new idYCostoMin(v,distTo[v]),v);
+                 while (!pq.esVacia()) {
+                     int s = pq.darMax().id;
+                     marked[v] = true;
+                     for (Arco3Costos<Integer> e : subGrafo.adj(v)) {
+                         int w = e.darDestino();
+                         if (marked[w]) continue;        
+                         if (e.darCostoHaversine() < distTo[w]) {
+                             distTo[w] = e.darCostoHaversine();
+                             edgeTo[w] = e;
+                             if (pq.contains(w)) pq.cambiarPrioridad(w,new idYCostoMin(w,distTo[w]));
+                             else                pq.agregar(new idYCostoMin(w,distTo[w]), w);;
+                         }
+                     }
+                 }  
+            }
+		}
+    public InterseccionConCostos<Integer, Informacion> darVerticeDelMaxSubgrafo(){
+    	InterseccionConCostos<Integer, Informacion> verticeMax= null;
+    	int maximo= 0;
+		for(InterseccionConCostos<Integer,Informacion> inter : grafoCon3Costos.darVertices())
+		{    int cantidad=0;
+			if(!inter.estaMarcado()){
+				cantidad=grafoCon3Costos.dfsConSize(inter.darId());
+			}
+			if(cantidad>maximo){
+				maximo=cantidad;
+				verticeMax=inter;
+			}
+		}
+		if(verticeMax!=null){
+		grafoCon3Costos.uncheck();
+		grafoCon3Costos.dfs(verticeMax.darId());
+		}
+		
+    	return verticeMax;
+    }
 	public static void main(String[] args) throws IOException {
 		MVCModelo modelo = new MVCModelo();
 	}

@@ -2,6 +2,8 @@ package model.data_structures;
 
 import java.util.Iterator;
 
+
+
 public class Grafo3Costos<K, V> {
 
 	private InterseccionConCostos<K,V>[] vertices;
@@ -45,7 +47,7 @@ public class Grafo3Costos<K, V> {
 				if(inter.darId() == idVertexIni)
 				{
 					int id = (int) idVertexFin;
-					Arco3Costos<K> arc = new Arco3Costos(id, cost);
+					Arco3Costos<K> arc = new Arco3Costos(id, cost,idVertexIni);
 					inter.agregarArco(arc);
 				}
 			}
@@ -253,7 +255,7 @@ public class Grafo3Costos<K, V> {
 	
 	public void setArc(K idVertexIni, K idVertexFin)
 	{
-		Arco3Costos<K> i = new Arco3Costos<K>(idVertexFin, 0);
+		Arco3Costos<K> i = new Arco3Costos<K>(idVertexFin, 0,idVertexIni);
 		for(InterseccionConCostos<K,V> inter : vertices)
 		{
 			if(inter != null)
@@ -271,7 +273,7 @@ public class Grafo3Costos<K, V> {
 	
 	public void setArcAndCost(K idVertexIni, K idVertexFin, double cost)
 	{
-		Arco3Costos<K> i = new Arco3Costos<K>(idVertexFin, cost);
+		Arco3Costos<K> i = new Arco3Costos<K>(idVertexFin, cost,idVertexIni);
 		for(InterseccionConCostos<K,V> inter : vertices)
 		{
 			if(inter != null)
@@ -294,9 +296,9 @@ public class Grafo3Costos<K, V> {
 		cantidadVertices++;
 	}
 	
-	public Iterator<K> adj(K idVertex)
+	public Iterable<Arco3Costos<K>> adj(K idVertex)
 	{
-		Queue<K> res= new Queue<K>(null);
+		Queue<Arco3Costos<K>> res= new Queue<Arco3Costos<K>>(null);
 		for(InterseccionConCostos<K,V> inter : vertices)
 		{
 			if(inter != null)
@@ -307,16 +309,16 @@ public class Grafo3Costos<K, V> {
 					{
 						if(arc != null)
 						{
-							K id =  arc.darDestino();
+							Arco3Costos<K> id =  arc;
 							res.enQueue(id);
 						}
 					}
-					return res.iterator();
+					return res;
 				}
 			}
 			
 		}
-		return res.iterator();
+		return res;
 	}
 	
 	public void uncheck()
@@ -336,10 +338,10 @@ public class Grafo3Costos<K, V> {
 		buscado.marcar();
 		if(buscado != null)
 		{
-			Iterator<K> adjacentes= adj(s);
+			Iterator<Arco3Costos<K>> adjacentes= adj(s).iterator();
 			while(adjacentes.hasNext()){
-				K actual = adjacentes.next();
-				dfs(actual);
+				Arco3Costos<K> actual = adjacentes.next();
+				dfs(actual.darOrigen());
 			}
 		}
 	}
@@ -350,10 +352,10 @@ public class Grafo3Costos<K, V> {
 		int x=1;
 		if(buscado != null)
 		{buscado.marcar();
-			Iterator<K> adjacentes= adj(s);
+			Iterator<Arco3Costos<K>> adjacentes= adj(s).iterator();
 			while(adjacentes.hasNext()){
-				K actual = adjacentes.next();
-				x+=dfsConSize(actual);
+				Arco3Costos<K> actual = adjacentes.next();
+				x+=dfsConSize(actual.darOrigen());
 			}
 		}
 		return x;
@@ -392,10 +394,40 @@ public class Grafo3Costos<K, V> {
 		}
 		return componente;
 	}
+	public Grafo3Costos<K,V> crearSubgrafo(K idVertex){
+		uncheck();
+		int size=dfsConSize(idVertex);
+		Grafo3Costos<K,V> subGrafo= new Grafo3Costos<K,V>(size);
+		for(InterseccionConCostos<K,V> inter : vertices)
+		{
+			
+			if(inter.estaMarcado())
+				subGrafo.addVertex(inter.darId(), inter.darInfo());
+				
+			
+		}
+		for(InterseccionConCostos<K,V> inter : vertices)
+		{
+			if(inter.estaMarcado())
+			for(Arco3Costos<K> edge : inter.darArcos())
+			{
+				subGrafo.AddEdge(edge.darOrigen(), edge.darDestino(), edge.darCostoHaversine());
+				subGrafo.setCostArcCSV(edge.darOrigen(), edge.darDestino(), edge.darCostoCSV());
+				subGrafo.setCostArcVelXTim(edge.darOrigen(), edge.darDestino(), edge.darCostoVelXTim());
+				
+					
+				
+			}
+				
+			
+		}
+		return subGrafo;
+	}
 	
 	public InterseccionConCostos[] darVertices()
 	{
 		return vertices;
 	}
+
 
 }
