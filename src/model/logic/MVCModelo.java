@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
@@ -755,6 +757,7 @@ public class MVCModelo {
 		InterseccionConCostos inicio = grafoCon3Costos.getInfoVertex(id);
 		Informacion info1 = (Informacion) inicio.darInfo();
 		colaStrings.enQueue("Los vértices alcanzables son:");
+		cola.enQueue(inicio);
 
 		String ruta = "./data/Alcanzables.html";
 		PrintWriter writer = null;
@@ -804,7 +807,7 @@ public class MVCModelo {
 			{
 				int idvertex = (int) inter.darId();
 				Informacion info2 = (Informacion) inter.darInfo();
-				Queue<String> vertices = Djikstra4(info1.darLatitud(), info1.darLongitud(), info2.darLatitud(), info2.darLongitud());
+				Queue<String> vertices = Djikstra7(info1.darLatitud(), info1.darLongitud(), info2.darLatitud(), info2.darLongitud());
 				while(!vertices.isEmpty())
 				{
 					String actual = vertices.deQueue();
@@ -812,56 +815,61 @@ public class MVCModelo {
 					String[] partes = actual.split(",");
 					String[] idpartes = partes[0].split(":"); 
 					int id2 = Integer.parseInt(idpartes[1]);
-					Interseccion agregar = grafo.getInfoVertex(id2);
-					cola.enQueue(agregar);
-				}
-				Interseccion primero = null;
-				Interseccion segundo = null;
-				boolean primercaso = false;
-				while(!cola.isEmpty())
-				{
-					if(primercaso == false)
-					{
-						segundo = cola.deQueue();
-						primero = cola.deQueue();
-						int id1 = (int) primero.darId();
-						int id2 = (int) segundo.darId();
-						costo += grafoCon3Costos.getCostArcVelXTim(id1, id2);
-					}
-					else
-					{
-						primero = cola.deQueue();
-						int id1 = (int) primero.darId();
-						int id2 = (int) segundo.darId();
-						costo += grafoCon3Costos.getCostArcVelXTim(id1, id2);
-					}
-					if(primercaso == true)
-					{
-						segundo = primero;
-					}
-					primercaso = true;
+					Interseccion comparar = grafo.getInfoVertex(id2);
+					costo += grafoCon3Costos.getCostArcVelXTim(id, id2);
 				}
 				if(costo<tiempo)
 				{
-					colaStrings.enQueue("Id: " + idvertex + " Lat: " + info2.darLatitud() + " Lng: " + info2.darLongitud());
-					Informacion info = (Informacion) primero.darInfo();
-					writer.println("line = [");
-					writer.println("{");
-					writer.println("lat: " + info1.darLatitud() + ",");
-					writer.println("lng: " + info1.darLongitud());
-					writer.println("},");
-					writer.println("{");
-					writer.println("lat: " + info2.darLatitud()+ ",");
-					writer.println("lng: " + info2.darLongitud());
-					writer.println("}");
-					writer.println("];");
-					writer.println("path = new google.maps.Polyline({");
-					writer.println("path: line,");
-					writer.println("strokeColor: '#FF0000',");
-					writer.println("strokeWeight: 2");
-					writer.println("});");
-					writer.println("path.setMap(map);");
+					cola.enQueue(inter);
 				}
+			}
+			Interseccion primero = null;
+			Interseccion segundo = null;
+			boolean primercaso = false;
+			while(!cola.isEmpty())
+			{
+				if(primercaso == false)
+				{
+					segundo = cola.deQueue();
+					primero = cola.deQueue();
+					int id1 = (int) primero.darId();
+					int id2 = (int) segundo.darId();
+					Informacion infoA = (Informacion) primero.darInfo();
+					Informacion infoB = (Informacion) primero.darInfo();
+					colaStrings.enQueue("Id: " + id1 + " Lat: " + infoA.darLatitud() + " Lng: " + infoA.darLongitud());
+					colaStrings.enQueue("Id: " + id2 + " Lat: " + infoB.darLatitud() + " Lng: " + infoB.darLongitud());
+				}
+				else
+				{
+					primero = cola.deQueue();
+					int id1 = (int) primero.darId();
+					int id2 = (int) segundo.darId();
+					Informacion infoA = (Informacion) primero.darInfo();
+					colaStrings.enQueue("Id: " + id1 + " Lat: " + infoA.darLatitud() + " Lng: " + infoA.darLongitud());
+				}
+				Informacion infoA = (Informacion) primero.darInfo();
+				Informacion infoB = (Informacion) segundo.darInfo();
+				writer.println("line = [");
+				writer.println("{");
+				writer.println("lat: " + infoA.darLatitud() + ",");
+				writer.println("lng: " + infoA.darLongitud());
+				writer.println("},");
+				writer.println("{");
+				writer.println("lat: " + infoB.darLatitud()+ ",");
+				writer.println("lng: " + infoB.darLongitud());
+				writer.println("}");
+				writer.println("];");
+				writer.println("path = new google.maps.Polyline({");
+				writer.println("path: line,");
+				writer.println("strokeColor: '#FF0000',");
+				writer.println("strokeWeight: 2");
+				writer.println("});");
+				writer.println("path.setMap(map);");
+				if(primercaso == true)
+				{
+					segundo = primero;
+				}
+				primercaso = true;
 			}
 		}
 		writer.println("}");
@@ -873,14 +881,144 @@ public class MVCModelo {
 		writer.close();
 		return colaStrings;
 	}
-	
+
 	/**
 	 * Parte C
 	 * @throws Exception 
 	 */
+
+	//2C
 	
-	//4C
+	public Queue<String> caminoCostoMinimoDijkstra(double latinicio, double lnginicio, double latdestino, double lngdestino) throws Exception
+	{
+		long inicioT = System.currentTimeMillis();
+		Queue<String> colaStrings = new Queue<String>(null);
+		int id1 = darIdMasCercano(lnginicio, latinicio);
+		int id2 = darIdMasCercano(lngdestino, latdestino);
+		Queue<String> camino = Djikstra7(latinicio, lnginicio, latdestino, lngdestino);
+		String ruta = "./data/DijkstraCaminoCorto.html";
+		PrintWriter writer = null;
+		try
+		{
+			writer = new PrintWriter(ruta);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		writer.println("<!DOCTYPE html>");
+		writer.println("<html>");
+		writer.println("<head>");
+		writer.println("<meta name=\"viewport\" content=\"initial-scale=1.0, user-scalable=no\">");
+		writer.println("<meta charset=\"utf-8\">");
+		writer.println("<title>Simple Polylines</title>");
+		writer.println("<style>");
+		writer.println("#map {");
+		writer.println("height: 100%;");
+		writer.println("}");
+		writer.println("html,");
+		writer.println("body {");
+		writer.println("height: 100%;");
+		writer.println("margin: 0;");
+		writer.println("padding: 0;");
+		writer.println("}");
+		writer.println("</style>");
+		writer.println("</head>");
+		writer.println("<body>");
+		writer.println("<div id=\"map\"></div>");
+		writer.println("<script>");
+		writer.println("function initMap() {");
+		writer.println("var map = new google.maps.Map(document.getElementById('map'), {");
+		writer.println("zoom: 5,");
+		writer.println("center: {");
+		writer.println("lat: 40.162838,");
+		writer.println("lng: -3.494526");
+		writer.println("},");
+		writer.println("mapTypeId: 'roadmap'");
+		writer.println("});");
+		writer.println("var line;");
+		writer.println("var path;");
+		boolean primercaso = false;
+		int segundo = 0;
+		int idA = 0;
+		double lat = 0;
+		double lng = 0;
+		double lat2 = 0;
+		double lng2 = 0;
+
+		while(!camino.isEmpty())
+		{
+			if(primercaso == false)
+			{
+				String actual = camino.deQueue();
+				actual.replace(" ", "");
+				String[] partes = actual.split(",");
+				String[] idpartes = partes[0].split(":"); 
+				idA = Integer.parseInt(idpartes[1]);
+				String[] latpartes = partes[1].split(":");
+				lat = Integer.parseInt(latpartes[1]);
+				String[] lngpartes = partes[2].split(":");
+				lng = Integer.parseInt(lngpartes[1]);
+				
+				String actual2 = camino.deQueue();
+				actual.replace(" ", "");
+				String[] partes2 = actual2.split(",");
+				String[] idpartes2 = partes2[0].split(":"); 
+				int idB = Integer.parseInt(idpartes2[1]);
+				String[] latpartes2 = partes2[1].split(":");
+				lat2 = Integer.parseInt(latpartes2[1]);
+				String[] lngpartes2 = partes2[2].split(":");
+				lng2 = Integer.parseInt(lngpartes2[1]);
+				
+				colaStrings.enQueue("Id: " + idA + " Lat: " + lat + " Lng: " + lng);
+				colaStrings.enQueue("Id: " + idB + " Lat: " + lat2 + " Lng: " + lng2);
+				System.out.println("Id:");
+			}
+			else
+			{
+				String actual = camino.deQueue();
+				actual.replace(" ", "");
+				String[] partes = actual.split(",");
+				String[] idpartes = partes[0].split(":"); 
+				idA = Integer.parseInt(idpartes[1]);
+				String[] latpartes = partes[1].split(":");
+				lat = Integer.parseInt(latpartes[1]);
+				String[] lngpartes = partes[2].split(":");
+				lng = Integer.parseInt(lngpartes[1]);
+				id2 = segundo;
+				colaStrings.enQueue("Id: " + idA + " Lat: " + lat + " Lng: " + lng);
+			}
+			writer.println("line = [");
+			writer.println("{");
+			writer.println("lat: " + lat + ",");
+			writer.println("lng: " + lng);
+			writer.println("},");
+			writer.println("{");
+			writer.println("lat: " + lat2+ ",");
+			writer.println("lng: " + lng2);
+			writer.println("}");
+			writer.println("];");
+			writer.println("path = new google.maps.Polyline({");
+			writer.println("path: line,");
+			writer.println("strokeColor: '#FF0000',");
+			writer.println("strokeWeight: 2");
+			writer.println("});");
+			writer.println("path.setMap(map);");
+			if(primercaso == true)
+			{
+				segundo = idA;
+			}
+			primercaso = true;
+
+		}
+		
+		long endTime = System.currentTimeMillis();
+		long tiempoCola = endTime - inicioT;
+		System.out.println("El tiempo fue de: " + tiempoCola);
+
+		return colaStrings;
+	}
 	
+	//3C
+
 	public Queue<String> caminoMasLargo(double lng, double lat) throws Exception
 	{
 		long inicioT = System.currentTimeMillis();
@@ -891,7 +1029,8 @@ public class MVCModelo {
 		int id = darIdMasCercano(lng, lat);
 		InterseccionConCostos inicio = grafoCon3Costos.getInfoVertex(id);
 		Informacion info1 = (Informacion) inicio.darInfo();
-		
+		System.out.println("La información del camino es:");
+
 		String ruta = "./data/MasLargo.html";
 		PrintWriter writer = null;
 		try
@@ -932,7 +1071,7 @@ public class MVCModelo {
 		writer.println("});");
 		writer.println("var line;");
 		writer.println("var path;");
-		
+
 		for(InterseccionConCostos inter : grafoCon3Costos.darVertices())
 		{
 			Informacion info2  = (Informacion) inter.darInfo();
@@ -945,7 +1084,7 @@ public class MVCModelo {
 		boolean primercaso = false;
 		Interseccion primero = null;
 		Interseccion segundo = null;
-		
+
 		while(!colaMasLarga.isEmpty())
 		{
 			if(primercaso == false)
@@ -970,7 +1109,7 @@ public class MVCModelo {
 			int idvertex = id;
 			Informacion infoA = (Informacion) primero.darInfo();
 			Informacion infoB = (Informacion) segundo.darInfo();
-			
+
 			Informacion info = (Informacion) primero.darInfo();
 			writer.println("line = [");
 			writer.println("{");
@@ -993,7 +1132,7 @@ public class MVCModelo {
 				segundo = primero;
 			}
 			primercaso = true;
-			
+
 		}
 		writer.println("}");
 		writer.println("</script>");
@@ -1002,11 +1141,11 @@ public class MVCModelo {
 		writer.println("</body>");
 		writer.println("</html>");
 		writer.close();
-		
+
 		long endTime = System.currentTimeMillis();
 		long tiempoCola = endTime - inicioT;
 		System.out.println("El tiempo fue de: " + tiempoCola);
-		
+
 		return colaStrings;
 	}
 
@@ -1128,7 +1267,9 @@ public class MVCModelo {
 		respuesta.enQueue("La distancia estimada es:"+ distanciaHaversine);
 		return respuesta;
 	}
-	public Queue<String> Prim(){
+	
+	public Queue<String> Prim() throws Exception{
+		long inic = System.currentTimeMillis();
 		InterseccionConCostos<Integer, Informacion> inicial= darVerticeDelMaxSubgrafo();
 		Iterable<Integer> idsVertices= grafoCon3Costos.getCC(inicial.darId());
 		Grafo3Costos<Integer,Informacion>  subGrafo= grafoCon3Costos.crearSubgrafo(inicial.darId());
@@ -1146,7 +1287,7 @@ public class MVCModelo {
 				distTo[v] = 0.0;
 				pq.agregar( new idYCostoMin(v,distTo[v]),v);
 				while (!pq.esVacia()) {
-					int s = pq.darMax().id;
+					int s = pq.sacarMax().id;
 					marked[v] = true;
 					for (Arco3Costos<Integer> e : subGrafo.adj(v)) {
 						int w = e.darDestino();
@@ -1155,12 +1296,38 @@ public class MVCModelo {
 							distTo[w] = e.darCostoHaversine();
 							edgeTo[w] = e;
 							if (pq.contains(w)) pq.cambiarPrioridad(w,new idYCostoMin(w,distTo[w]));
-							else                pq.agregar(new idYCostoMin(w,distTo[w]), w);;
+							else                pq.agregar(new idYCostoMin(w,distTo[w]), w);
 						}
 					}
 				}  
 			}
+		Queue<String> respuesta = new Queue<String>(null);
+		long duracion = System.currentTimeMillis()-inic;
+		respuesta.enQueue("Duracion:"+duracion);
+		int totalVertices= subGrafo.V();
+		respuesta.enQueue("n Vertices:"+ totalVertices);
+		Iterator<Integer> iterador= idsVertices.iterator();
+		ArrayList<Integer> idsReales= new ArrayList<Integer>();
+		respuesta.enQueue("Vertices:");
+		while(iterador.hasNext()){
+			   int actual=iterador.next();
+               idsReales.add(actual);
+               respuesta.enQueue(actual);
+               
+		}
+		respuesta.enQueue("Arcos:");
+		double distanciaFinal= 0;
+		for(int i=0; i<edgeTo.length;i++)
+		{
+			Arco3Costos<Integer> actual=edgeTo[i];
+			respuesta.enQueue("Origen:"+idsReales.get(edgeTo[i].darOrigen())+"Destino:"+idsReales.get(edgeTo[i].darDestino()));
+			distanciaFinal+= actual.darCostoHaversine();
+		}
+		respuesta.enQueue("Distancia:"+ distanciaFinal);
+		return respuesta;
 	}
+	
+	
 	public InterseccionConCostos<Integer, Informacion> darVerticeDelMaxSubgrafo(){
 		InterseccionConCostos<Integer, Informacion> verticeMax= null;
 		int maximo= 0;
